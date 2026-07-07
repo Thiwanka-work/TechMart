@@ -12,10 +12,17 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-slate-900 text-white py-4 px-6 shadow-lg">
+    <nav className="bg-slate-950 text-white py-4.5 px-6 border-b border-slate-800 shadow-xl">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="text-2xl font-black tracking-wider text-indigo-400 hover:text-indigo-300 transition">
-          TechMart
+        <Link to="/" className="flex items-center gap-2.5 group">
+          <img 
+            src="/logo.png" 
+            alt="TechMart Logo" 
+            className="h-10 w-10 object-contain rounded-xl border border-slate-700 bg-white p-0.5 shadow group-hover:scale-105 transition duration-200" 
+          />
+          <span className="text-xl font-black tracking-widest bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent group-hover:from-blue-400 group-hover:to-purple-400 transition duration-300">
+            TECHMART
+          </span>
         </Link>
         <div className="flex gap-6 items-center text-sm font-medium">
           <Link to="/products" className="text-slate-300 hover:text-white transition">Products</Link>

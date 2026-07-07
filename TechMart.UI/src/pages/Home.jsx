@@ -81,19 +81,19 @@ const Home = () => {
       {/* Hero Banner */}
       <section className="bg-white border-b border-slate-200 py-16 px-6 text-center shadow-sm">
         <div className="max-w-4xl mx-auto space-y-6">
-          <span className="inline-block bg-indigo-50 text-indigo-700 text-xs px-4 py-1.5 rounded-full font-bold uppercase tracking-wider shadow-sm">
+          <span className="inline-block bg-blue-50 text-blue-700 text-[10px] px-4 py-1.5 rounded-full font-bold uppercase tracking-widest shadow-sm border border-blue-100">
             Professional Tech Gadget Store
           </span>
           <h1 className="text-4xl md:text-6xl font-black text-slate-900 tracking-tight leading-none">
-            Elevate Your Setup with <span className="text-indigo-650">TechMart</span>
+            Elevate Your Setup with <span className="bg-gradient-to-r from-blue-600 to-purple-650 bg-clip-text text-transparent tracking-wide font-black">TECHMART</span>
           </h1>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed font-medium">
             Discover a curated marketplace of professional-grade developer hardware, smart gadgets, and elite desk accessories designed to maximize your productivity.
           </p>
           <div className="pt-2">
             <Link 
               to="/products" 
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg hover:shadow-indigo-500/20 transition duration-200 inline-block cursor-pointer"
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg hover:shadow-indigo-500/10 transition duration-250 inline-block cursor-pointer"
             >
               Browse Catalog
             </Link>
