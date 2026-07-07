@@ -74,9 +74,9 @@ Strict Rules for your behavior:
 [Live Inventory Context]
 {inventoryBuilder.ToString()}";
 
-                // 4. Send request to Gemini API (using gemini-1.5-flash)
+                // 4. Send request to Gemini API (using gemini-2.5-flash)
                 var client = _httpClientFactory.CreateClient();
-                var endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={_apiKey}";
+                var endpoint = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={_apiKey}";
 
                 var payload = new
                 {
