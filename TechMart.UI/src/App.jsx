@@ -9,6 +9,7 @@ import Cart from './pages/Cart';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import AdminDashboard from './pages/AdminDashboard';
+import TechBuddyChat from './components/TechBuddyChat';
 import { AuthProvider } from './context/AuthContext';
 
 function AppContent() {
@@ -30,6 +31,7 @@ function AppContent() {
         </Routes>
       </main>
       {!isAdminPath && <Footer />}
+      {!isAdminPath && <TechBuddyChat />}
     </div>
   );
 }

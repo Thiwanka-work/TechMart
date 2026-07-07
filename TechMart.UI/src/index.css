@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 3.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 15px rgba(59, 130, 246, 0.5); }
+  50% { box-shadow: 0 0 30px rgba(166, 75, 219, 0.8); }
+}
+
+.animate-glow {
+  animation: pulse-glow 2.5s infinite;
+}
