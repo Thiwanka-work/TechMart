@@ -21,5 +21,9 @@ namespace TechMart.API.DTOs
         public string Category { get; set; } = string.Empty;
 
         public string ImageUrl { get; set; } = string.Empty;
+        
+        public List<string> AdditionalImages { get; set; } = new();
+        
+        public List<string> Variants { get; set; } = new();
     }
 }

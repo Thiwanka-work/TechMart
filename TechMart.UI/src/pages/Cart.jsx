@@ -62,11 +62,12 @@ const Cart = () => {
             const product = allProducts.find(p => p.id === item.productId);
             if (!product) return null;
             return {
-              id: item.productId, // Use productId as item.id
+              id: `${item.productId}-${item.variant || ''}`,
               productId: product.id,
               productName: product.name,
               productPrice: product.price,
               productImageUrl: product.imageUrl,
+              variant: item.variant,
               quantity: item.quantity
             };
           }).filter(Boolean);
@@ -93,7 +94,7 @@ const Cart = () => {
       } else {
         // Guest LocalStorage update
         const guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-        const target = guestCart.find(item => item.productId === itemId);
+        const target = guestCart.find(item => `${item.productId}-${item.variant || ''}` === itemId.toString());
         if (target) {
           target.quantity = nextQty;
           localStorage.setItem('guestCart', JSON.stringify(guestCart));
@@ -113,7 +114,7 @@ const Cart = () => {
       } else {
         // Guest LocalStorage delete
         let guestCart = JSON.parse(localStorage.getItem('guestCart') || '[]');
-        guestCart = guestCart.filter(item => item.productId !== itemId);
+        guestCart = guestCart.filter(item => `${item.productId}-${item.variant || ''}` !== itemId.toString());
         localStorage.setItem('guestCart', JSON.stringify(guestCart));
         fetchCart();
       }
@@ -253,6 +254,7 @@ const Cart = () => {
                       />
                       <div>
                         <h4 className="font-bold text-slate-800 text-sm">{item.productName}</h4>
+                        {item.variant && <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{item.variant}</p>}
                         <p className="text-xs text-indigo-600 font-extrabold mt-0.5">Rs. {item.productPrice.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                       </div>
                     </div>
@@ -260,14 +262,14 @@ const Cart = () => {
                     <div className="flex items-center gap-6 justify-between sm:justify-end w-full sm:w-auto">
                       <div className="flex items-center border border-slate-200 rounded-lg bg-slate-50 overflow-hidden shadow-sm">
                         <button 
-                          onClick={() => handleUpdateQuantity(item.productId, item.quantity, -1)}
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity, -1)}
                           className="px-2.5 py-1 bg-white hover:bg-slate-100 font-bold border-r border-slate-200 transition cursor-pointer"
                         >
                           -
                         </button>
                         <span className="px-3.5 font-bold text-slate-800 text-xs">{item.quantity}</span>
                         <button 
-                          onClick={() => handleUpdateQuantity(item.productId, item.quantity, 1)}
+                          onClick={() => handleUpdateQuantity(item.id, item.quantity, 1)}
                           className="px-2.5 py-1 bg-white hover:bg-slate-100 font-bold border-l border-slate-200 transition cursor-pointer"
                         >
                           +
@@ -279,7 +281,7 @@ const Cart = () => {
                       </p>
 
                       <button 
-                        onClick={() => handleRemoveItem(item.productId)}
+                        onClick={() => handleRemoveItem(item.id)}
                         className="text-slate-400 hover:text-rose-600 transition cursor-pointer p-1"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

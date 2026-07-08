@@ -5,6 +5,7 @@ namespace TechMart.API.Models
         public int Id { get; set; }
         public int CartId { get; set; }
         public int ProductId { get; set; }
+        public string Variant { get; set; } = string.Empty;
         public int Quantity { get; set; }
 
         // Navigation properties

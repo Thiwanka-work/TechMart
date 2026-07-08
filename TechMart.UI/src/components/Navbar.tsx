@@ -1,18 +1,36 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const Navbar = () => {
-  const { user, logout } = useAuth();
+// Define strict types for the Auth user
+export interface AuthUser {
+  id: string;
+  name: string;
+  email: string;
+  role: 'Admin' | 'User' | string;
+}
+
+// Define the shape of the Auth Context returned by useAuth()
+export interface AuthContextType {
+  user: AuthUser | null;
+  token: string | null;
+  login: (jwtToken: string) => void;
+  logout: () => void;
+  loading: boolean;
+}
+
+const Navbar: React.FC = memo(() => {
+  const { user, logout } = useAuth() as AuthContextType;
   const navigate = useNavigate();
 
-  const handleLogout = () => {
+  // Memoize handleLogout to prevent recreation on every render
+  const handleLogout = useCallback(() => {
     logout();
     navigate('/login');
-  };
+  }, [logout, navigate]);
 
   return (
-    <nav className="bg-slate-950 text-white py-4.5 px-6 border-b border-slate-800 shadow-xl">
+    <nav className="bg-slate-950 text-white py-4.5 px-6 border-b border-slate-800 shadow-xl" aria-label="Main Navigation">
       <div className="container mx-auto flex justify-between items-center">
         <Link to="/" className="flex items-center gap-2.5 group">
           <img 
@@ -35,13 +53,13 @@ const Navbar = () => {
                   Admin Dashboard
                 </Link>
               )}
-              <div className="h-4 w-px bg-slate-700"></div>
+              <div className="h-4 w-px bg-slate-700" aria-hidden="true"></div>
               <span className="text-slate-400">
                 Welcome, <span className="font-semibold text-slate-100">{user.name}</span>
               </span>
               <button 
                 onClick={handleLogout} 
-                className="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-1.5 rounded-lg transition"
+                className="bg-rose-600 hover:bg-rose-700 text-white px-3.5 py-1.5 rounded-lg transition cursor-pointer"
               >
                 Logout
               </button>
@@ -61,6 +79,8 @@ const Navbar = () => {
       </div>
     </nav>
   );
-};
+});
+
+Navbar.displayName = 'Navbar';
 
 export default Navbar;

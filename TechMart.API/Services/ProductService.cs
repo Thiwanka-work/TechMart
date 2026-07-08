@@ -1,5 +1,6 @@
-using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
 using System.Linq;
 using System.Threading.Tasks;
 using TechMart.API.Models;
@@ -47,6 +48,8 @@ namespace TechMart.API.Services
                 Stock = dto.Stock,
                 Category = dto.Category,
                 ImageUrl = dto.ImageUrl,
+                AdditionalImagesJson = JsonSerializer.Serialize(dto.AdditionalImages ?? new List<string>()),
+                VariantsJson = JsonSerializer.Serialize(dto.Variants ?? new List<string>()),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -80,6 +83,9 @@ namespace TechMart.API.Services
             {
                 product.ImageUrl = dto.ImageUrl;
             }
+            
+            product.AdditionalImagesJson = JsonSerializer.Serialize(dto.AdditionalImages ?? new List<string>());
+            product.VariantsJson = JsonSerializer.Serialize(dto.Variants ?? new List<string>());
             
             product.UpdatedAt = DateTime.UtcNow;
 

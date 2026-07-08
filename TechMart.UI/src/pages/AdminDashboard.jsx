@@ -52,7 +52,9 @@ const AdminDashboard = () => {
     price: '',
     stock: '',
     category: '',
-    imageUrl: ''
+    imageUrl: '',
+    additionalImages: '',
+    variants: ''
   });
   const [uploadingImage, setUploadingImage] = useState(false);
 
@@ -270,7 +272,9 @@ const AdminDashboard = () => {
         price: product.price.toString(),
         stock: product.stock.toString(),
         category: product.category,
-        imageUrl: product.imageUrl
+        imageUrl: product.imageUrl,
+        additionalImages: product.additionalImages ? product.additionalImages.join(', ') : '',
+        variants: product.variants ? product.variants.join(', ') : ''
       });
     } else {
       setEditingProduct(null);
@@ -280,7 +284,9 @@ const AdminDashboard = () => {
         price: '',
         stock: '',
         category: categories[0]?.name || '',
-        imageUrl: ''
+        imageUrl: '',
+        additionalImages: '',
+        variants: ''
       });
     }
     setShowProductModal(true);
@@ -295,7 +301,9 @@ const AdminDashboard = () => {
       price: parseFloat(productForm.price),
       stock: parseInt(productForm.stock),
       category: productForm.category,
-      imageUrl: productForm.imageUrl
+      imageUrl: productForm.imageUrl,
+      additionalImages: productForm.additionalImages.split(',').map(s => s.trim()).filter(s => s),
+      variants: productForm.variants.split(',').map(s => s.trim()).filter(s => s)
     };
 
     try {
@@ -1580,6 +1588,27 @@ const AdminDashboard = () => {
                     <img src={productForm.imageUrl} alt="Preview" className="h-16 w-16 object-cover rounded-xl border border-slate-800 bg-slate-950" />
                   </div>
                 )}
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-[10px] text-slate-500 uppercase tracking-widest font-black">Additional Images (Comma Separated URLs)</label>
+                <textarea
+                  rows="2"
+                  value={productForm.additionalImages}
+                  onChange={(e) => setProductForm(prev => ({ ...prev, additionalImages: e.target.value }))}
+                  className="w-full bg-slate-955 border border-slate-800 focus:border-indigo-500 text-slate-205 px-4.5 py-2 rounded-xl outline-none resize-none"
+                  placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="block text-[10px] text-slate-500 uppercase tracking-widest font-black">Variants (Comma Separated)</label>
+                <input
+                  type="text"
+                  value={productForm.variants}
+                  onChange={(e) => setProductForm(prev => ({ ...prev, variants: e.target.value }))}
+                  className="w-full bg-slate-955 border border-slate-800 focus:border-indigo-500 text-slate-205 px-4.5 py-2 rounded-xl outline-none"
+                  placeholder="e.g. 32GB, 64GB, 128GB"
+                />
               </div>
             </div>
 

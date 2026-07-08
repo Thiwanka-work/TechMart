@@ -59,6 +59,7 @@ namespace TechMart.API.Controllers
                     ProductName = ci.Product?.Name ?? "Unknown",
                     ProductPrice = ci.Product?.Price ?? 0,
                     ProductImageUrl = ci.Product?.ImageUrl ?? "",
+                    Variant = ci.Variant,
                     ci.Quantity,
                     Stock = ci.Product?.Stock ?? 0
                 }).ToList()
@@ -88,7 +89,7 @@ namespace TechMart.API.Controllers
                 return NotFound(new { message = "Product not found." });
             }
 
-            var cartItem = cart.CartItems.FirstOrDefault(ci => ci.ProductId == request.ProductId);
+            var cartItem = cart.CartItems.FirstOrDefault(ci => ci.ProductId == request.ProductId && ci.Variant == (request.Variant ?? string.Empty));
             if (cartItem != null)
             {
                 cartItem.Quantity += request.Quantity;
@@ -99,6 +100,7 @@ namespace TechMart.API.Controllers
                 {
                     CartId = cart.Id,
                     ProductId = request.ProductId,
+                    Variant = request.Variant ?? string.Empty,
                     Quantity = request.Quantity
                 };
                 _context.CartItems.Add(cartItem);
@@ -157,6 +159,7 @@ namespace TechMart.API.Controllers
     {
         public int ProductId { get; set; }
         public int Quantity { get; set; }
+        public string Variant { get; set; } = string.Empty;
     }
 
     public class UpdateCartItemRequest
