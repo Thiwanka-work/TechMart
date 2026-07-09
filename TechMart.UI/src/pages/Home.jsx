@@ -216,29 +216,45 @@ const Home = () => {
       </section>
 
       {/* Famous Device Categories */}
-      <section className="container mx-auto py-12 px-6">
-        <h2 className="text-2xl font-black text-slate-800 mb-6 text-center">Famous Device Categories</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-5xl mx-auto">
+      <section className="container mx-auto py-16 px-6">
+        <div className="text-center mb-10">
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Famous Categories</h2>
+          <p className="text-slate-500 text-sm mt-2">Explore our most popular hardware sections</p>
+        </div>
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {displayCategories.map((cat, idx) => (
             <Link 
               key={idx}
               to={`/products?category=${encodeURIComponent(cat.name)}`}
-              className="bg-white border border-slate-200 hover:border-indigo-500 hover:shadow-lg rounded-2xl p-6 text-center transition duration-200 cursor-pointer group flex flex-col items-center justify-center min-h-[190px]"
+              className="relative rounded-2xl overflow-hidden group cursor-pointer aspect-[4/3] shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
             >
               {cat.imageUrl ? (
-                <img 
-                  src={cat.imageUrl} 
-                  alt={cat.name} 
-                  className="w-20 h-20 object-cover rounded-xl mb-4 border border-slate-100 group-hover:scale-110 transition duration-200 shadow-sm" 
-                />
+                <>
+                  <img 
+                    src={cat.imageUrl} 
+                    alt={cat.name} 
+                    className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out" 
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/40 to-transparent opacity-80 group-hover:opacity-95 transition-opacity duration-300" />
+                  <div className="absolute inset-0 p-5 flex flex-col justify-end">
+                    <h3 className="font-black text-white text-lg sm:text-xl tracking-wide drop-shadow-lg group-hover:text-indigo-300 transition-colors">{cat.name}</h3>
+                    <p className="text-indigo-200 text-xs font-bold mt-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
+                      Explore now &rarr;
+                    </p>
+                  </div>
+                </>
               ) : (
-                <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-4 group-hover:bg-indigo-600 group-hover:text-white transition">
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 to-purple-700 flex flex-col items-center justify-center p-5 transition-transform duration-500 group-hover:scale-105">
+                  <svg className="w-12 h-12 text-white/80 mb-3 group-hover:scale-110 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
+                  <h3 className="font-black text-white text-center text-lg sm:text-xl drop-shadow-md">{cat.name}</h3>
+                  <p className="text-indigo-200 text-xs font-bold mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    Explore now &rarr;
+                  </p>
                 </div>
               )}
-              <h3 className="font-black text-slate-800 text-sm tracking-wide uppercase">{cat.name}</h3>
             </Link>
           ))}
         </div>
