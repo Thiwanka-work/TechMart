@@ -4,11 +4,12 @@ This document outlines the professional deployment architecture and step-by-step
 
 ## ?? 1. Architecture Overview
 
+- **Frontend UI:** React + Vite - Hosted statically on **AWS S3** (Scalable and cost-effective).
 - **Database:** AWS RDS (PostgreSQL) - Managed database for secure and reliable data storage.
 - **Backend API:** ASP.NET Core 8 Web API.
 - **Hosting Server:** AWS EC2 Instance (Ubuntu Linux).
 - **Process Manager:** `systemd` (Keeps the API running in the background and auto-restarts on crash/reboot).
-- **Web Server / Reverse Proxy:** Nginx (Listens on Port 80 and securely forwards internet traffic to the internal .NET API running on Port 5000).
+- **Reverse Proxy:** Nginx (Listens on Port 80 and securely forwards internet traffic to the internal .NET API running on Port 5000).
 
 ---
 
@@ -23,7 +24,39 @@ ssh -i "C:\path\to\techmart-key.pem" ubuntu@44.201.48.64
 
 ---
 
-## ?? 3. Backend Deployment Steps
+## ?? 3. Frontend Deployment Steps (AWS S3)
+
+Since the frontend is a React application built with Vite, it is hosted independently on an AWS S3 bucket.
+
+### A. Build the Frontend
+1. Open a terminal and navigate to the `TechMart.UI` directory.
+2. Run the production build command:
+   ```bash
+   npm run build
+   ```
+   This generates a `dist` folder containing all the optimized static files (HTML, JS, CSS).
+
+### B. Upload to AWS S3
+1. Log in to the **AWS Management Console** and navigate to **S3**.
+2. Open your frontend hosting bucket.
+3. **Crucial Step:** Select and **Delete** all existing files/folders in the bucket. (Vite generates unique hash filenames like `main-a1b2.js`. If you don't delete old files, your bucket will fill up with unused garbage files over time).
+4. Click **Upload**, select the contents *inside* your local `TechMart.UI/dist` folder, and upload them to the bucket.
+
+*(Alternative: Use AWS CLI)*
+```bash
+# This automatically syncs and deletes old files
+aws s3 sync dist/ s3://your-bucket-name --delete
+```
+
+### C. Invalidate CloudFront Cache (If applicable)
+If you are using AWS CloudFront in front of S3:
+1. Go to CloudFront in the AWS Console.
+2. Select your distribution -> **Invalidations** tab -> **Create Invalidation**.
+3. Enter `/*` as the object path and submit. This forces Edge locations to fetch your newly uploaded files.
+
+---
+
+## ?? 4. Backend Deployment Steps (AWS EC2)
 
 ### A. Publish & Upload Code
 1. Compile the C# project in Visual Studio or via CLI: `dotnet publish -c Release`.
