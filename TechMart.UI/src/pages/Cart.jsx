@@ -118,6 +118,7 @@ const Cart = () => {
         localStorage.setItem('guestCart', JSON.stringify(guestCart));
         fetchCart();
       }
+      window.dispatchEvent(new CustomEvent('cart:updated'));
     } catch (err) {
       alert('Failed to remove item from cart.');
     }
@@ -166,6 +167,7 @@ const Cart = () => {
       }
       setCart({ items: [] });
       setIsCheckingOut(false);
+      window.dispatchEvent(new CustomEvent('cart:updated'));
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || 'Checkout failed. Please inspect gadget stock levels.');

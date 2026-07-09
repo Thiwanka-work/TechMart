@@ -11,6 +11,7 @@ TechMart.API/*.db
 TechMart.API/*.db-wal
 TechMart.API/*.db-shm
 TechMart.API/wwwroot/uploads/
+TechMart.API/appsettings.Development.json
 
 # IDEs & System Files
 .vs/

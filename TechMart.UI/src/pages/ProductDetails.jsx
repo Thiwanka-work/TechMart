@@ -47,6 +47,7 @@ const ProductDetails = () => {
       localStorage.setItem('guestCart', JSON.stringify(guestCart));
       setSuccess('Item successfully added to your guest cart!');
       window.dispatchEvent(new CustomEvent('martbuddy:excite'));
+      window.dispatchEvent(new CustomEvent('cart:updated'));
       setTimeout(() => setSuccess(''), 3000);
       return;
     }
@@ -56,6 +57,7 @@ const ProductDetails = () => {
       await api.post('/cart/items', { productId: product.id, quantity: 1, variant: selectedVariant });
       setSuccess('Item successfully added to cart!');
       window.dispatchEvent(new CustomEvent('martbuddy:excite'));
+      window.dispatchEvent(new CustomEvent('cart:updated'));
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
       alert('Failed to add item to cart.');

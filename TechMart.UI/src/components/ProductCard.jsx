@@ -25,6 +25,7 @@ const ProductCard = ({ product, onAddToCart }) => {
             e.stopPropagation();
             onAddToCart();
             window.dispatchEvent(new CustomEvent('martbuddy:excite'));
+            window.dispatchEvent(new CustomEvent('cart:updated'));
           }}
           className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-sm font-medium shadow-sm hover:shadow cursor-pointer"
         >

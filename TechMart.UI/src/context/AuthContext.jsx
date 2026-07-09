@@ -33,7 +33,6 @@ export const AuthProvider = ({ children }) => {
 
       const decoded = decodeToken(token);
       if (decoded) {
-        console.log("Decoded User JWT:", decoded);
         const role = decoded["role"] || decoded["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"];
         const name = decoded["unique_name"] || decoded["name"] || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"];
         const email = decoded["email"] || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"];
