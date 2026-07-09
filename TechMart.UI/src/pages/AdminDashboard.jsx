@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import DescriptionEditor from '../components/DescriptionEditor';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
@@ -53,10 +54,12 @@ const AdminDashboard = () => {
     stock: '',
     category: '',
     imageUrl: '',
-    additionalImages: '',
-    variants: ''
+    additionalImages: [],
+    variants: []
   });
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingAdditionalImage, setUploadingAdditionalImage] = useState(false);
+  const [variantInput, setVariantInput] = useState('');
 
   const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
@@ -273,8 +276,8 @@ const AdminDashboard = () => {
         stock: product.stock.toString(),
         category: product.category,
         imageUrl: product.imageUrl,
-        additionalImages: product.additionalImages ? product.additionalImages.join(', ') : '',
-        variants: product.variants ? product.variants.join(', ') : ''
+        additionalImages: Array.isArray(product.additionalImages) ? product.additionalImages : [],
+        variants: Array.isArray(product.variants) ? product.variants : []
       });
     } else {
       setEditingProduct(null);
@@ -285,11 +288,62 @@ const AdminDashboard = () => {
         stock: '',
         category: categories[0]?.name || '',
         imageUrl: '',
-        additionalImages: '',
-        variants: ''
+        additionalImages: [],
+        variants: []
       });
     }
+    setVariantInput('');
     setShowProductModal(true);
+  };
+
+  // Additional image upload handler
+  const handleAdditionalImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    setUploadingAdditionalImage(true);
+    try {
+      const response = await api.post('/admin/products/upload-image', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setProductForm(prev => ({ ...prev, additionalImages: [...prev.additionalImages, response.data.imageUrl] }));
+      showToast('Additional image uploaded!', 'success');
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to upload additional image.', 'error');
+    } finally {
+      setUploadingAdditionalImage(false);
+      e.target.value = '';
+    }
+  };
+
+  // Remove additional image by index
+  const removeAdditionalImage = (index) => {
+    setProductForm(prev => ({
+      ...prev,
+      additionalImages: prev.additionalImages.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Add a variant chip
+  const addVariant = () => {
+    const val = variantInput.trim();
+    if (!val) return;
+    if (productForm.variants.includes(val)) {
+      showToast('Variant already added.', 'error');
+      return;
+    }
+    setProductForm(prev => ({ ...prev, variants: [...prev.variants, val] }));
+    setVariantInput('');
+  };
+
+  // Remove a variant chip
+  const removeVariant = (index) => {
+    setProductForm(prev => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index)
+    }));
   };
 
   const submitProductForm = async (e) => {
@@ -302,8 +356,8 @@ const AdminDashboard = () => {
       stock: parseInt(productForm.stock),
       category: productForm.category,
       imageUrl: productForm.imageUrl,
-      additionalImages: productForm.additionalImages.split(',').map(s => s.trim()).filter(s => s),
-      variants: productForm.variants.split(',').map(s => s.trim()).filter(s => s)
+      additionalImages: productForm.additionalImages,
+      variants: productForm.variants
     };
 
     try {
@@ -1537,13 +1591,10 @@ const AdminDashboard = () => {
               </div>
 
               <div className="space-y-1.5">
-                <label className="block text-[10px] text-slate-500 uppercase tracking-widest font-black">Specs Description</label>
-                <textarea
-                  required
-                  rows="3"
+                <label className="block text-[10px] text-slate-500 uppercase tracking-widest font-black">Product Description</label>
+                <DescriptionEditor
                   value={productForm.description}
-                  onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))}
-                  className="w-full bg-slate-955 border border-slate-800 focus:border-indigo-500 text-slate-205 px-4.5 py-2 rounded-xl outline-none resize-none"
+                  onChange={(val) => setProductForm(prev => ({ ...prev, description: val }))}
                 />
               </div>
 
@@ -1590,25 +1641,72 @@ const AdminDashboard = () => {
                 )}
               </div>
 
-              <div className="space-y-1.5">
-                <label className="block text-[10px] text-slate-500 uppercase tracking-widest font-black">Additional Images (Comma Separated URLs)</label>
-                <textarea
-                  rows="2"
-                  value={productForm.additionalImages}
-                  onChange={(e) => setProductForm(prev => ({ ...prev, additionalImages: e.target.value }))}
-                  className="w-full bg-slate-955 border border-slate-800 focus:border-indigo-500 text-slate-205 px-4.5 py-2 rounded-xl outline-none resize-none"
-                  placeholder="https://example.com/img1.jpg, https://example.com/img2.jpg"
-                />
+              {/* Additional Images - File Upload Gallery */}
+              <div className="space-y-2">
+                <label className="block text-[10px] text-slate-500 uppercase tracking-widest font-black">Additional Images</label>
+                <div className="border border-dashed border-slate-700 rounded-xl bg-slate-955 p-3">
+                  <div className="flex items-center gap-3 mb-3">
+                    <label className="flex items-center gap-2 cursor-pointer bg-indigo-650/10 hover:bg-indigo-650/20 border border-indigo-500/20 text-indigo-400 text-[11px] font-black px-3 py-1.5 rounded-lg transition">
+                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                      </svg>
+                      Upload Image
+                      <input type="file" accept="image/*" onChange={handleAdditionalImageUpload} className="hidden" />
+                    </label>
+                    {uploadingAdditionalImage && <span className="text-[11px] text-indigo-400 animate-pulse font-bold">Uploading...</span>}
+                    <span className="text-[10px] text-slate-600 font-semibold">{productForm.additionalImages.length} image{productForm.additionalImages.length !== 1 ? 's' : ''} added</span>
+                  </div>
+                  {productForm.additionalImages.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {productForm.additionalImages.map((img, idx) => (
+                        <div key={idx} className="relative group">
+                          <img src={img} alt={`img-${idx+1}`} className="w-14 h-14 object-cover rounded-lg border border-slate-700 bg-slate-900" />
+                          <button
+                            type="button"
+                            onClick={() => removeAdditionalImage(idx)}
+                            className="absolute -top-1.5 -right-1.5 w-4.5 h-4.5 bg-rose-500 hover:bg-rose-600 text-white rounded-full text-[9px] font-black flex items-center justify-center opacity-0 group-hover:opacity-100 transition cursor-pointer shadow"
+                          >✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {productForm.additionalImages.length === 0 && (
+                    <p className="text-[10px] text-slate-600 font-semibold text-center py-2">No additional images yet</p>
+                  )}
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="block text-[10px] text-slate-500 uppercase tracking-widest font-black">Variants (Comma Separated)</label>
-                <input
-                  type="text"
-                  value={productForm.variants}
-                  onChange={(e) => setProductForm(prev => ({ ...prev, variants: e.target.value }))}
-                  className="w-full bg-slate-955 border border-slate-800 focus:border-indigo-500 text-slate-205 px-4.5 py-2 rounded-xl outline-none"
-                  placeholder="e.g. 32GB, 64GB, 128GB"
-                />
+
+              {/* Variants - Chip Builder */}
+              <div className="space-y-2">
+                <label className="block text-[10px] text-slate-500 uppercase tracking-widest font-black">Product Variants</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={variantInput}
+                    onChange={(e) => setVariantInput(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addVariant(); } }}
+                    placeholder="e.g. Black, 128GB, 8GB RAM…"
+                    className="flex-grow bg-slate-955 border border-slate-800 focus:border-indigo-500 text-slate-205 px-4 py-2 rounded-xl outline-none text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={addVariant}
+                    className="bg-indigo-650/20 hover:bg-indigo-650/30 text-indigo-400 border border-indigo-500/20 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer whitespace-nowrap"
+                  >
+                    + Add
+                  </button>
+                </div>
+                {productForm.variants.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {productForm.variants.map((v, idx) => (
+                      <span key={idx} className="inline-flex items-center gap-1.5 bg-slate-800 border border-slate-700 text-slate-300 text-[11px] font-bold px-2.5 py-1 rounded-lg">
+                        {v}
+                        <button type="button" onClick={() => removeVariant(idx)} className="text-slate-500 hover:text-rose-400 transition cursor-pointer font-black text-[10px]">✕</button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[10px] text-slate-600 font-semibold">Press Enter or click Add to create a variant chip</p>
               </div>
             </div>
 

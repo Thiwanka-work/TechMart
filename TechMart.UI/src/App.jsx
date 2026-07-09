@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -80,6 +81,7 @@ function App() {
     <AuthProvider>
       <Router>
         <AppContent />
+        <Toaster position="bottom-right" />
       </Router>
     </AuthProvider>
   );

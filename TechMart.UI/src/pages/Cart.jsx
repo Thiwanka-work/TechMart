@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'react-hot-toast';
 
 const Cart = () => {
   const { user } = useAuth();
@@ -102,7 +103,7 @@ const Cart = () => {
         }
       }
     } catch (err) {
-      alert('Failed to update cart quantity.');
+      toast.error('Failed to update cart quantity.');
     }
   };
 
@@ -120,7 +121,7 @@ const Cart = () => {
       }
       window.dispatchEvent(new CustomEvent('cart:updated'));
     } catch (err) {
-      alert('Failed to remove item from cart.');
+      toast.error('Failed to remove item from cart.');
     }
   };
 
@@ -136,7 +137,7 @@ const Cart = () => {
         setError('Please enter credit card specifications.');
         return;
       }
-      alert('Credit/Debit Card payments are currently not integrated. Please select "Delivery on Pay" to place your order.');
+      toast.error('Credit/Debit Card payments are currently not integrated. Please select "Delivery on Pay" to place your order.', { duration: 4000 });
       return;
     }
 

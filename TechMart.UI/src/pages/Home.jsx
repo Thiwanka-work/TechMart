@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import ProductCard from '../components/ProductCard';
 import { useAuth } from '../context/AuthContext';
-
+import { toast } from 'react-hot-toast';
 const Home = () => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -58,15 +58,15 @@ const Home = () => {
         guestCart.push({ productId: product.id, quantity: 1 });
       }
       localStorage.setItem('guestCart', JSON.stringify(guestCart));
-      alert(`"${product.name}" added to guest cart!`);
+      toast.success(`"${product.name}" added to guest cart!`);
       return;
     }
 
     try {
       await api.post('/cart/items', { productId: product.id, quantity: 1 });
-      alert(`"${product.name}" added to cart!`);
+      toast.success(`"${product.name}" added to cart!`);
     } catch (err) {
-      alert('Failed to add item to cart.');
+      toast.error('Failed to add item to cart.');
     }
   };
 
