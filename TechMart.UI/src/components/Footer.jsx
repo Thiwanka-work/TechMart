@@ -5,7 +5,7 @@ const Footer = () => {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-slate-950 text-slate-400 border-t border-slate-900 mt-auto text-xs">
+    <footer className="bg-slate-950 text-slate-400 border-t border-slate-900 mt-auto text-xs md:text-sm">
       {/* Main footer grid */}
       <div className="container mx-auto px-6 py-8 md:py-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
 
@@ -17,7 +17,7 @@ const Footer = () => {
               alt="TechMart Logo"
               className="h-7 w-7 object-contain rounded-lg border border-slate-800 bg-white p-0.5 shadow group-hover:scale-105 transition duration-200"
             />
-            <span className="text-sm font-extrabold tracking-widest bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
+            <span className="text-sm md:text-base font-black tracking-widest bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
               TECHMART
             </span>
           </Link>
@@ -47,7 +47,7 @@ const Footer = () => {
 
         {/* Shop Links */}
         <div>
-          <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-3">Shop</h4>
+          <h4 className="text-[11px] md:text-xs font-black text-slate-300 uppercase tracking-widest mb-3.5">Shop</h4>
           <ul className="space-y-2 text-slate-500">
             {[
               { label: 'All Products', to: '/products' },
@@ -71,7 +71,7 @@ const Footer = () => {
 
         {/* Account Links */}
         <div>
-          <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-3">Account</h4>
+          <h4 className="text-[11px] md:text-xs font-black text-slate-300 uppercase tracking-widest mb-3.5">Account</h4>
           <ul className="space-y-2 text-slate-500">
             {[
               { label: 'Login', to: '/login' },
@@ -94,7 +94,7 @@ const Footer = () => {
 
         {/* Contact Info */}
         <div>
-          <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-widest mb-3">Contact Us</h4>
+          <h4 className="text-[11px] md:text-xs font-black text-slate-300 uppercase tracking-widest mb-3.5">Contact Us</h4>
           <ul className="space-y-2 text-slate-500">
             <li className="flex items-start gap-2">
               <svg className="w-3.5 h-3.5 text-indigo-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -131,7 +131,7 @@ const Footer = () => {
 
       {/* Bottom bar */}
       <div className="border-t border-slate-900 bg-slate-950/80">
-        <div className="container mx-auto px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] text-slate-600">
+        <div className="container mx-auto px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] md:text-xs text-slate-600">
           <p>© {year} <span className="text-slate-500 font-semibold">TechMart</span>. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <span>Made with ❤️ in Sri Lanka 🇱🇰</span>
