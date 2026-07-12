@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../api/axios';
+import { usePendingFeedback } from '../hooks/usePendingFeedback';
 
 const MartBuddyChat = () => {
   const INITIAL_MESSAGE = {
@@ -13,6 +14,14 @@ const MartBuddyChat = () => {
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
   // Conversation history for memory: [{role:"user"|"model", text:"..."}]
   const [chatHistory, setChatHistory] = useState([]);
+
+  // Pending feedback Hook & States
+  const { pendingItems, hasPending, refreshPending } = usePendingFeedback();
+  const [feedbackProduct, setFeedbackProduct] = useState(null);
+  const [feedbackStep, setFeedbackStep] = useState(0); // 0 = none, 1 = rating, 2 = comment
+  const [chatRating, setChatRating] = useState(0);
+  const [showFeedbackBubble, setShowFeedbackBubble] = useState(false);
+  const [feedbackBubbleItem, setFeedbackBubbleItem] = useState(null);
 
   const messagesEndRef = useRef(null);
   const robotRef = useRef(null);
@@ -29,8 +38,11 @@ const MartBuddyChat = () => {
 
   useEffect(() => {
     const greetingTimer = setTimeout(() => {
-      setShowGreeting(true);
-      window.dispatchEvent(new CustomEvent('martbuddy:excite'));
+      // Only show normal greeting if there are no pending reviews
+      if (!hasPending) {
+        setShowGreeting(true);
+        window.dispatchEvent(new CustomEvent('martbuddy:excite'));
+      }
     }, 5000);
     const hideGreetingTimer = setTimeout(() => {
       setShowGreeting(false);
@@ -39,7 +51,69 @@ const MartBuddyChat = () => {
       clearTimeout(greetingTimer);
       clearTimeout(hideGreetingTimer);
     };
-  }, []);
+  }, [hasPending]);
+
+  useEffect(() => {
+    if (!hasPending) {
+      setShowFeedbackBubble(false);
+      return;
+    }
+    if (hasPending && !isOpen) {
+      const notified = sessionStorage.getItem('feedbackNotified');
+      if (!notified) {
+        const timer = setTimeout(() => {
+          setFeedbackBubbleItem(pendingItems[0]);
+          setShowFeedbackBubble(true);
+          sessionStorage.setItem('feedbackNotified', 'true');
+        }, 8000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [hasPending, pendingItems, isOpen]);
+
+  useEffect(() => {
+    if (isOpen && hasPending && feedbackStep === 0) {
+      const firstItem = pendingItems[0];
+      setFeedbackProduct(firstItem);
+      setFeedbackStep(1);
+      
+      setMessages(prev => [
+        ...prev,
+        {
+          sender: 'buddy',
+          text: `🎉 I noticed your order for **${firstItem.productName}** was marked as delivered! \n\nHow would you rate it from 1 to 5 stars? (Reply with a number: 1, 2, 3, 4, or 5)`
+        }
+      ]);
+    }
+  }, [isOpen, hasPending, pendingItems]);
+
+  const startFeedbackFlow = (item) => {
+    setFeedbackProduct(item);
+    setFeedbackStep(1);
+    setIsOpen(true);
+    setShowFeedbackBubble(false);
+    
+    setMessages(prev => [
+      ...prev,
+      {
+        sender: 'buddy',
+        text: `🎉 I noticed your order for **${item.productName}** was marked as delivered! \n\nHow would you rate it from 1 to 5 stars? (Reply with a number: 1, 2, 3, 4, or 5)`
+      }
+    ]);
+  };
+
+  useEffect(() => {
+    const handleReviewsUpdated = () => {
+      refreshPending();
+      setFeedbackProduct(null);
+      setFeedbackStep(0);
+      setChatRating(0);
+    };
+    window.addEventListener('reviews:updated', handleReviewsUpdated);
+    return () => {
+      window.removeEventListener('reviews:updated', handleReviewsUpdated);
+    };
+  }, [refreshPending]);
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -99,20 +173,81 @@ const MartBuddyChat = () => {
 
     // Add user message to display
     setMessages(prev => [...prev, { sender: 'user', text: userMsg }]);
-    setIsLoading(true);
 
+    if (feedbackStep === 1) {
+      const parsedRating = parseInt(userMsg);
+      if (parsedRating >= 1 && parsedRating <= 5) {
+        setChatRating(parsedRating);
+        setFeedbackStep(2);
+        setMessages(prev => [
+          ...prev,
+          {
+            sender: 'buddy',
+            text: `You rated it **${parsedRating} ⭐**. \n\nPlease tell me a little bit about why, or write your feedback comments here! (Or type "skip" to submit without comments)`
+          }
+        ]);
+      } else {
+        setMessages(prev => [
+          ...prev,
+          {
+            sender: 'buddy',
+            text: `Oops! Please enter a number from 1 to 5 stars to rate this product.`
+          }
+        ]);
+      }
+      return;
+    }
+
+    if (feedbackStep === 2) {
+      setIsLoading(true);
+      try {
+        const commentText = userMsg.toLowerCase() === 'skip' ? '' : userMsg;
+        await api.post('/chat/submit-feedback', {
+          productId: feedbackProduct.productId,
+          rating: chatRating,
+          comment: commentText
+        });
+        
+        setMessages(prev => [
+          ...prev,
+          {
+            sender: 'buddy',
+            text: `Thank you! Your feedback has been saved successfully. ✅\n\nIs there anything else I can help you with today?`
+          }
+        ]);
+        
+        setFeedbackProduct(null);
+        setFeedbackStep(0);
+        setChatRating(0);
+        refreshPending();
+      } catch (err) {
+        console.error('Failed to submit chatbot feedback', err);
+        setMessages(prev => [
+          ...prev,
+          {
+            sender: 'buddy',
+            text: `Sorry, I couldn't save your review due to a server error. Let's return to normal chat.`
+          }
+        ]);
+        setFeedbackProduct(null);
+        setFeedbackStep(0);
+        setChatRating(0);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    setIsLoading(true);
     try {
-      // Send message + full conversation history to backend
       const response = await api.post('/chat', {
         message: userMsg,
         history: chatHistory
       });
       const botResponse = response.data?.response || "I couldn't fetch an answer right now. Please try again.";
 
-      // Add bot response to display
       setMessages(prev => [...prev, { sender: 'buddy', text: botResponse }]);
 
-      // Update history: append user turn + model turn
       setChatHistory(prev => [
         ...prev,
         { role: 'user', text: userMsg },
@@ -121,7 +256,7 @@ const MartBuddyChat = () => {
     } catch (err) {
       console.error('MartBuddy chat call failed.', err);
       const errorMsg = err.response?.data?.message || "Oops! I ran into an issue connecting to the servers. Please verify that the backend is active and the API Key is configured.";
-      setMessages(prev => [...prev, { sender: 'buddy', text: `⚠️ **Error:** ${errorMsg}` }]);
+      setMessages(prev => [...prev, { sender: 'buddy', text: `🤖 **Error:** ${errorMsg}` }]);
     } finally {
       setIsLoading(false);
     }
@@ -204,6 +339,34 @@ const MartBuddyChat = () => {
           </div>
         )}
 
+        {/* Proactive Feedback Speech Bubble */}
+        {showFeedbackBubble && !isOpen && feedbackBubbleItem && (
+          <div 
+            onClick={() => startFeedbackFlow(feedbackBubbleItem)}
+            className="absolute bottom-24 right-0 w-64 bg-slate-800 border border-amber-500/50 text-white p-3.5 rounded-2xl rounded-br-sm shadow-xl animate-[bounce_2s_infinite] origin-bottom-right z-50 cursor-pointer hover:border-amber-400 transition"
+          >
+            <div className="flex items-start gap-2">
+              <span className="text-xl">📦</span>
+              <div>
+                <p style={{ fontSize: '12px', fontWeight: 700, lineHeight: '1.4' }}>
+                  Your order for **{feedbackBubbleItem.productName}** has arrived!
+                </p>
+                <p className="text-[10px] text-amber-400 font-bold uppercase mt-1 flex items-center gap-1">
+                  Tap to leave a review →
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowFeedbackBubble(false); }}
+              className="absolute -top-2 -right-2 w-5 h-5 bg-slate-700 hover:bg-rose-500 transition-colors rounded-full flex items-center justify-center text-slate-300 hover:text-white border border-slate-600 shadow-md cursor-pointer"
+            >
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         {/* Floating Hearts */}
         {isExcited && (
           <div className="absolute -top-10 left-0 right-0 h-32 pointer-events-none z-50">
@@ -226,6 +389,13 @@ const MartBuddyChat = () => {
 
         {/* Glow Aura */}
         <div className={`absolute -inset-1 ${isExcited ? 'bg-pink-500' : 'bg-blue-500'} rounded-[34px] rounded-br-xl blur opacity-40 group-hover:opacity-70 transition duration-500 ${isIdle ? 'opacity-10' : ''} ${isExcited ? 'animate-pulse opacity-100 blur-md' : ''}`} />
+
+        {/* Proactive Feedback Notification Badge */}
+        {hasPending && !isOpen && (
+          <span className="absolute -top-1.5 -right-1.5 bg-rose-500 text-white text-[10px] font-black w-6 h-6 rounded-full border border-slate-900 shadow-md z-30 animate-pulse flex items-center justify-center">
+            {pendingItems.length}
+          </span>
+        )}
 
         {/* Robot Button */}
         <button
@@ -325,8 +495,9 @@ const MartBuddyChat = () => {
         <div
           className="chat-window fixed bottom-24 right-6 z-50 flex flex-col overflow-hidden"
           style={{
-            width: '420px',
-            height: '540px',
+            width: 'calc(100vw - 32px)',
+            maxWidth: '420px',
+            height: 'min(540px, calc(100vh - 120px))',
             background: '#0f172a',
             border: '1px solid #1e293b',
             borderRadius: '20px',

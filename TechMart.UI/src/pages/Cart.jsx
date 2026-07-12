@@ -18,7 +18,11 @@ const Cart = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [addressLine2, setAddressLine2] = useState('');
+  const [city, setCity] = useState('');
+  const [postalCode, setPostalCode] = useState('');
+  const [isUsingSavedAddress, setIsUsingSavedAddress] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('PayOnDelivery'); // 'PayOnDelivery', 'Card'
 
   // Card States
@@ -30,15 +34,42 @@ const Cart = () => {
     fetchCart();
   }, [user]);
 
-  // Set default details if user logs in
+  // Fetch user profile saved details if logged in
   useEffect(() => {
-    if (user) {
-      setFullName(user.name || '');
-      setEmail(user.email || '');
-    } else {
-      setFullName('');
-      setEmail('');
-    }
+    const fetchUserProfile = async () => {
+      if (user) {
+        try {
+          const response = await api.get('/user/profile');
+          const profile = response.data;
+          if (profile.savedFullName) {
+            setFullName(profile.savedFullName);
+            setPhone(profile.savedPhone);
+            setAddressLine1(profile.savedAddressLine1);
+            setAddressLine2(profile.savedAddressLine2 || '');
+            setCity(profile.savedCity);
+            setPostalCode(profile.savedPostalCode);
+            setIsUsingSavedAddress(true);
+          } else {
+            setFullName(user.name || '');
+            setEmail(user.email || '');
+          }
+        } catch (err) {
+          console.error("Failed to load user profile saved address", err);
+          setFullName(user.name || '');
+          setEmail(user.email || '');
+        }
+      } else {
+        setFullName('');
+        setEmail('');
+        setPhone('');
+        setAddressLine1('');
+        setAddressLine2('');
+        setCity('');
+        setPostalCode('');
+        setIsUsingSavedAddress(false);
+      }
+    };
+    fetchUserProfile();
   }, [user]);
 
   const fetchCart = async () => {
@@ -127,7 +158,7 @@ const Cart = () => {
 
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim() || !phone.trim() || !address.trim()) {
+    if (!fullName.trim() || !email.trim() || !phone.trim() || !addressLine1.trim() || !city.trim() || !postalCode.trim()) {
       setError('Please fill in all shipping details.');
       return;
     }
@@ -154,7 +185,10 @@ const Cart = () => {
         customerName: fullName,
         customerEmail: email,
         customerPhone: phone,
-        customerAddress: address,
+        customerAddressLine1: addressLine1,
+        customerAddressLine2: addressLine2,
+        customerCity: city,
+        customerPostalCode: postalCode,
         paymentMethod: paymentMethod, // 'PayOnDelivery'
         items: itemsPayload
       };
@@ -298,7 +332,14 @@ const Cart = () => {
                 // Checkout Delivery Form
                 <form id="checkout-form" onSubmit={handleCheckoutSubmit} className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
                   <div>
-                    <h3 className="text-lg font-bold text-slate-800">Billing & Delivery details</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-bold text-slate-800">Billing & Delivery details</h3>
+                      {isUsingSavedAddress && (
+                        <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                          Using saved address ✓
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-slate-400 mt-0.5">Please provide delivery address coordinates</p>
                   </div>
 
@@ -357,8 +398,43 @@ const Cart = () => {
                         />
                       </div>
                     </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-[10px] text-slate-450 uppercase tracking-wider">Address Line 1</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5" />
+                          </svg>
+                        </span>
+                        <input 
+                          type="text"
+                          required
+                          value={addressLine1}
+                          onChange={(e) => setAddressLine1(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-500 rounded-xl pl-10 pr-4 py-2.5 outline-none font-semibold text-slate-800"
+                          placeholder="e.g. 123/A, Galle Road"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 sm:col-span-2">
+                      <label className="text-[10px] text-slate-450 uppercase tracking-wider">Address Line 2 (Optional)</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5" />
+                          </svg>
+                        </span>
+                        <input 
+                          type="text"
+                          value={addressLine2}
+                          onChange={(e) => setAddressLine2(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-500 rounded-xl pl-10 pr-4 py-2.5 outline-none font-semibold text-slate-800"
+                          placeholder="e.g. Apartment, Suite, Unit (optional)"
+                        />
+                      </div>
+                    </div>
                     <div className="space-y-1.5">
-                      <label className="text-[10px] text-slate-450 uppercase tracking-wider">Shipping Address</label>
+                      <label className="text-[10px] text-slate-450 uppercase tracking-wider">City</label>
                       <div className="relative">
                         <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -369,10 +445,28 @@ const Cart = () => {
                         <input 
                           type="text"
                           required
-                          value={address}
-                          onChange={(e) => setAddress(e.target.value)}
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
                           className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-500 rounded-xl pl-10 pr-4 py-2.5 outline-none font-semibold text-slate-800"
-                          placeholder="Street No, City, Province"
+                          placeholder="e.g. Colombo"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] text-slate-450 uppercase tracking-wider">Postal Code</label>
+                      <div className="relative">
+                        <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 pointer-events-none">
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                          </svg>
+                        </span>
+                        <input 
+                          type="text"
+                          required
+                          value={postalCode}
+                          onChange={(e) => setPostalCode(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-200 focus:border-indigo-500 rounded-xl pl-10 pr-4 py-2.5 outline-none font-semibold text-slate-800"
+                          placeholder="e.g. 00100"
                         />
                       </div>
                     </div>

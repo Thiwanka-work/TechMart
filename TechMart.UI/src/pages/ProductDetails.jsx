@@ -24,12 +24,13 @@ function parseDescription(raw) {
   return { overview: raw, features: [], specs: [], inBox: [], isStructured: false };
 }
 
-/* ─── Tab definitions ────────────────────────────────────────── */
+/* ── Tab definitions ──────────────────────────────────────────────────────────────────────── */
 const TABS = [
-  { id: 'overview',  label: 'Overview',       icon: '📋' },
-  { id: 'features',  label: 'Features',        icon: '✨' },
-  { id: 'specs',     label: 'Specifications',  icon: '⚙️' },
+  { id: 'overview',  label: 'Overview',       icon: '📝' },
+  { id: 'features',  label: 'Features',        icon: '⚡' },
+  { id: 'specs',     label: 'Specifications',  icon: '📋' },
   { id: 'inBox',     label: "In the Box",      icon: '📦' },
+  { id: 'reviews',   label: "Reviews",         icon: '⭐' },
 ];
 
 /* ─── Main Component ─────────────────────────────────────────── */
@@ -46,7 +47,26 @@ const ProductDetails = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  useEffect(() => { fetchProductDetails(); }, [id]);
+  // Reviews States
+  const [reviews, setReviews] = useState([]);
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState('');
+  const [reviewerName, setReviewerName] = useState('');
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+
+  useEffect(() => {
+    fetchProductDetails();
+    fetchReviews();
+  }, [id]);
+
+  const fetchReviews = async () => {
+    try {
+      const response = await api.get(`/reviews/${id}`);
+      setReviews(response.data);
+    } catch (err) {
+      console.error("Failed to load reviews", err);
+    }
+  };
 
   const fetchProductDetails = async () => {
     try {
@@ -61,6 +81,32 @@ const ProductDetails = () => {
       setError('Product details could not be loaded.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSubmitReview = async (e) => {
+    e.preventDefault();
+    if (rating < 1 || rating > 5) {
+      toast.error("Please select a rating between 1 and 5 stars.");
+      return;
+    }
+    try {
+      setReviewsLoading(true);
+      await api.post('/reviews', { 
+        productId: parseInt(id), 
+        rating, 
+        comment,
+        reviewerName: user ? undefined : reviewerName 
+      });
+      toast.success("Review submitted successfully!");
+      setComment('');
+      setReviewerName('');
+      fetchReviews();
+      window.dispatchEvent(new CustomEvent('reviews:updated'));
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to submit review.");
+    } finally {
+      setReviewsLoading(false);
     }
   };
 
@@ -141,6 +187,7 @@ const ProductDetails = () => {
 
   // Only show tabs that have content
   const visibleTabs = TABS.filter(t => {
+    if (t.id === 'reviews') return true;
     if (!desc.isStructured) return t.id === 'overview';
     if (t.id === 'overview')  return !!desc.overview;
     if (t.id === 'features')  return desc.features.length > 0;
@@ -422,6 +469,153 @@ const ProductDetails = () => {
                       <span className="text-slate-700 text-sm font-medium">{item}</span>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {/* Reviews */}
+              {safeTab === 'reviews' && (
+                <div className="space-y-8">
+                  {/* Reviews Summary Header */}
+                  <div className="flex flex-col md:flex-row gap-6 items-start md:items-center bg-slate-50 border border-slate-100 rounded-2xl p-6">
+                    <div className="text-center md:text-left flex-shrink-0">
+                      <p className="text-xs text-slate-450 uppercase tracking-wider font-bold mb-1">Average Rating</p>
+                      <div className="flex items-center justify-center md:justify-start gap-2">
+                        <span className="text-4xl font-black text-slate-800">
+                          {reviews.length > 0 
+                            ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
+                            : '0.0'}
+                        </span>
+                        <div className="flex text-amber-400">
+                          {Array.from({ length: 5 }).map((_, i) => {
+                            const avg = reviews.length > 0 ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length) : 0;
+                            return (
+                              <svg key={i} className={`w-6 h-6 ${i < Math.round(avg) ? 'fill-current' : 'text-slate-200'}`} viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                              </svg>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <p className="text-xs text-slate-500 font-semibold mt-1">Based on {reviews.length} product reviews</p>
+                    </div>
+
+                    <div className="hidden md:block w-px h-16 bg-slate-200" />
+
+                    <div className="flex-1 w-full space-y-1.5 text-xs text-slate-600 font-semibold">
+                      {Array.from({ length: 5 }).map((_, idx) => {
+                        const stars = 5 - idx;
+                        const count = reviews.filter(r => r.rating === stars).length;
+                        const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
+                        return (
+                          <div key={stars} className="flex items-center gap-3 w-full">
+                            <span className="w-10 text-right">{stars} star</span>
+                            <div className="flex-1 h-2 bg-slate-200 rounded-full overflow-hidden">
+                              <div className="h-full bg-amber-400" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="w-8 text-slate-400 font-bold">{count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Reviews List */}
+                  <div className="space-y-4">
+                    <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider">Customer Reviews ({reviews.length})</h4>
+                    {reviews.length === 0 ? (
+                      <p className="text-slate-500 text-sm italic py-4">No reviews yet for this product. Be the first to share your experience!</p>
+                    ) : (
+                      <div className="divide-y divide-slate-100 space-y-4">
+                        {reviews.map((r) => (
+                          <div key={r.id} className="pt-4 first:pt-0 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <span className="font-extrabold text-slate-800 text-sm block">{r.reviewerName}</span>
+                                <span className="text-[10px] text-slate-400 font-bold">{new Date(r.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <div className="flex text-amber-400">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                  <svg key={i} className={`w-4 h-4 ${i < r.rating ? 'fill-current' : 'text-slate-200'}`} viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                  </svg>
+                                ))}
+                              </div>
+                            </div>
+                            <p className="text-slate-600 text-xs leading-normal whitespace-pre-wrap">{r.comment || "No comment provided."}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Add Review Form */}
+                  <div className="border-t border-slate-100 pt-6">
+                    <form onSubmit={handleSubmitReview} className="bg-slate-50 border border-slate-100 rounded-2xl p-6 space-y-4 max-w-xl">
+                      <h4 className="text-sm font-black text-slate-800 uppercase tracking-wider">
+                        {user && reviews.some(r => r.reviewerName === user.fullName || r.reviewerName === user.name) 
+                          ? 'Update Your Review' 
+                          : 'Write a Customer Review'}
+                      </h4>
+                      
+                      {/* Name Input (For Guests Only) */}
+                      {!user && (
+                        <div className="space-y-1">
+                          <label className="text-[10px] text-slate-455 uppercase tracking-wider font-bold">Your Name</label>
+                          <input
+                            type="text"
+                            required
+                            value={reviewerName}
+                            onChange={(e) => setReviewerName(e.target.value)}
+                            className="w-full bg-white border border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-2.5 outline-none font-semibold text-slate-800 text-xs"
+                            placeholder="e.g. John Doe"
+                          />
+                        </div>
+                      )}
+
+                      {/* Rating Input */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-slate-450 uppercase tracking-wider font-bold">Your Rating</label>
+                        <div className="flex items-center gap-1.5">
+                          {Array.from({ length: 5 }).map((_, i) => {
+                            const starVal = i + 1;
+                            return (
+                              <button
+                                type="button"
+                                key={i}
+                                onClick={() => setRating(starVal)}
+                                className="text-amber-400 hover:scale-110 transition cursor-pointer"
+                              >
+                                <svg className={`w-8 h-8 ${starVal <= rating ? 'fill-current' : 'text-slate-200'}`} viewBox="0 0 20 20" fill="currentColor">
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                </svg>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Comment Input */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] text-slate-450 uppercase tracking-wider font-bold">Feedback Details</label>
+                        <textarea
+                          required
+                          rows={4}
+                          value={comment}
+                          onChange={(e) => setComment(e.target.value)}
+                          className="w-full bg-white border border-slate-200 focus:border-indigo-500 rounded-xl px-4 py-2.5 outline-none font-semibold text-slate-800 text-xs"
+                          placeholder="Share your experience using this gadget..."
+                        />
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={reviewsLoading}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs uppercase px-6 py-2.5 rounded-xl shadow transition duration-200 cursor-pointer disabled:opacity-50"
+                      >
+                        {reviewsLoading ? 'Submitting...' : 'Submit Review'}
+                      </button>
+                    </form>
+                  </div>
                 </div>
               )}
             </div>
