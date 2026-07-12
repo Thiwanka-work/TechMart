@@ -4,6 +4,14 @@ TechMart is a responsive, feature-rich full-stack e-commerce web application des
 
 This project was built to demonstrate proficiency in modern web development, scalable architecture, and full-stack integration. It features a robust **C# ASP.NET Core API** backend, a premium **React (Vite)** frontend styled with **Tailwind CSS**, and a comprehensive **Admin Dashboard** for complete store management.
 
+<div align="center">
+  <img src="home.png" alt="TechMart Storefront" width="1400"/>
+</div>
+
+<div align="center">
+  <img src="Martbuddy.png" alt="TechMart AI Chat Assistant" width="1400"/>
+</div>
+
 ---
 
 ## 🚀 Key Features & Functionality
