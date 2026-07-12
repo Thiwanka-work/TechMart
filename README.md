@@ -1,7 +1,3 @@
-<<<<<<< Updated upstream
-# TechMart
-TechMart is a modern, responsive, and feature-rich full-stack e-commerce web application designed for selling high-end tech gadgets,
-=======
 # 🛒 TechMart - Premium Full-Stack E-Commerce Platform
 
 TechMart is a responsive, feature-rich full-stack e-commerce web application designed for selling high-end tech gadgets, developer gear, and smart office accessories.
@@ -130,4 +126,3 @@ npm run dev
         +-- context          # React Context (AuthContext)
         +-- pages            # Views (Home, Products, Cart, AdminDashboard)
 ```
->>>>>>> Stashed changes
