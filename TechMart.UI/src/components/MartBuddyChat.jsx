@@ -495,8 +495,9 @@ const MartBuddyChat = () => {
         <div
           className="chat-window fixed bottom-24 right-6 z-50 flex flex-col overflow-hidden"
           style={{
-            width: '420px',
-            height: '540px',
+            width: 'calc(100vw - 32px)',
+            maxWidth: '420px',
+            height: 'min(540px, calc(100vh - 120px))',
             background: '#0f172a',
             border: '1px solid #1e293b',
             borderRadius: '20px',
