@@ -25,3 +25,7 @@ TechMart.API/wwwroot/
 *.sln.docstates
 .DS_Store
 Thumbs.db
+publish/
+TechMartPublish.zip
+TechMart.API/Properties/PublishProfiles/
+

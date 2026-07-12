@@ -80,15 +80,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Auto-create database tables in Production (RDS PostgreSQL)
-if (!app.Environment.IsDevelopment())
-{
-    using (var scope = app.Services.CreateScope())
-    {
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        db.Database.EnsureCreated();
-    }
-}
+
 
 // Ensure wwwroot/uploads directory exists for development image hosting
 var uploadsDir = Path.Combine(app.Environment.ContentRootPath, "wwwroot", "uploads");

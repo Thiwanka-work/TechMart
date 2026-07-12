@@ -19,20 +19,22 @@ This project was built to demonstrate proficiency in modern web development, sca
 ### 🤖 MartBuddy - AI Shopping Assistant
 - **Google Gemini Integration**: A fully integrated AI conversational chatbot powered by the Gemini API.
 - **Context-Aware Recommendations**: The AI has real-time access to the live product inventory (prices, stock, specifications). It analyzes customer requirements (budget, usage, brand preference) and recommends actual available products.
+- **Feedback Collection**: MartBuddy proactively asks users for feedback on recently purchased products that haven't been reviewed yet.
 - **Smart Conversational UI**: Features an interactive, sliding chat widget on the storefront allowing users to chat with the assistant, complete with chat history management.
 
 ### 🛍️ Storefront & Shopping Experience
-- **Interactive Product Catalog**: Search, filter by category division, and view detailed gadget specifications.
+- **Interactive Product Catalog**: Search, filter by category division, and view detailed gadget specifications, multiple additional images, and product variants (e.g., colors).
 - **Hybrid Cart System**:
   - **Registered Users**: Database-persisted shopping carts synced across devices.
   - **Guest Users**: Session-cached local storage shopping carts allowing users to shop without creating an account.
-- **Flexible Guest Checkout**: Complete guest orders by providing delivery coordinates (Name, Email, Phone, Shipping Address).
+- **Flexible Guest Checkout & Fast Checkout**: Complete guest orders by providing delivery coordinates. Registered users have their saved profiles automatically fill in checkout details for faster purchases.
 - **Cash on Delivery (COD)**: Quick order placement with "Delivery on Pay" confirmation.
+- **Product Reviews & Ratings**: Customers and guests can leave 1-5 star ratings and comments on products, displaying aggregated feedback on product pages.
 - **LKR Currency Integration**: All prices, subtotals, and invoice charges are automatically formatted in Sri Lankan Rupees (Rs. / LKR).
 
 ### 🛠️ Admin Dashboard (Management Console)
 - **Business Performance Analytics**: High-impact metrics cards tracking Total Revenue, Orders, Customers, Products, Categories, and Low Stock Alerts.
-- **Product Management**: Create, delete, and perform inline price/stock edits directly inside tabular lists.
+- **Product Management**: Create, delete, and perform inline price/stock edits. Upload multiple product images and define product variants.
 - **Visual Category Manager**: Add and update product tags, including custom Category Image headers rendered on the storefront.
 - **Order Processing Center**: Track and manage order parameters. View complete recipient details and dynamically update order statuses (*Pending, Processing, Shipped, Completed, Cancelled*).
 - **Customer Analyzer**: Track customer registration history, total order counts, and overall spending metrics.
@@ -76,11 +78,14 @@ This project heavily implements industry-standard design patterns to ensure the 
 ## 🗄️ Database Schema & Domain Models
 
 The relational database is normalized and consists of the following core entities:
-- `User`: Manages authentication credentials and role-based access (Admin/Customer).
-- `Product`: Stores item details, pricing, stock count, and image references.
+- `User`: Manages authentication credentials, role-based access (Admin/Customer), and saved shipping addresses.
+- `Product`: Stores item details, pricing, stock count, variant configurations, and image galleries.
 - `Category`: Categorization entity for grouping products.
-- `Cart` & `CartItem`: Manages active shopping sessions and selected quantities.
+- `Cart` & `CartItem`: Manages active shopping sessions and selected variant quantities.
 - `Order` & `OrderItem`: Immutable records of completed transactions, shipping details, and historical prices.
+- `Review`: Stores product ratings, feedback, and links to registered users or anonymous guest names.
+
+*(See the `database_structure.md` artifact for a detailed Entity Relationship Diagram and column list).*
 
 ---
 
@@ -115,7 +120,7 @@ npm run dev
 
 ---
 
-## 📂 Project Structure
+## 📁 Project Structure
 
 ```text
 +-- TechMart.API             # C# Backend Web API project (.NET 8)
@@ -134,3 +139,17 @@ npm run dev
         +-- context          # React Context (AuthContext)
         +-- pages            # Views (Home, Products, Cart, AdminDashboard)
 ```
+
+
+---
+
+## ?? CRITICAL: Production Deployment & Database Migrations
+
+When deploying the Web API to a production environment (like AWS EC2), the system uses **PostgreSQL**, whereas local development uses **SQLite**. 
+
+Because Entity Framework Core migrations are **provider-specific**, you **CANNOT** run migrations generated for SQLite directly on a PostgreSQL database without risking severe schema mapping issues (like missing IDENTITY columns for auto-incrementing Primary Keys).
+
+### How to deploy database changes properly:
+1. **Never** run dotnet ef migrations add while pointing to the SQLite database if those migrations are meant for Production.
+2. If you need to make schema changes for Production, you must temporarily change the DefaultConnection string in your local ppsettings.json to point to a PostgreSQL database, and **then** generate the migrations.
+3. If you have already applied SQLite migrations to a Postgres database and face 500 Internal Server Error on inserts, you must manually execute ALTER TABLE "TableName" ALTER COLUMN "Id" ADD GENERATED BY DEFAULT AS IDENTITY; in psql to fix the missing auto-increment constraints.
