@@ -1,0 +1,27 @@
+# React UI dependencies & build outputs
+TechMart.UI/node_modules/
+TechMart.UI/dist/
+TechMart.UI/.env*
+TechMart.UI/.eslintcache
+
+# .NET API dependencies & build outputs
+TechMart.API/bin/
+TechMart.API/obj/
+TechMart.API/*.db
+TechMart.API/*.db-wal
+TechMart.API/*.db-shm
+TechMart.API/wwwroot/uploads/
+TechMart.API/appsettings.Development.json
+TechMart.API/appsettings.Production.json
+TechMart.API/publish/
+TechMart.API/wwwroot/
+
+# IDEs & System Files
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+.DS_Store
+Thumbs.db
