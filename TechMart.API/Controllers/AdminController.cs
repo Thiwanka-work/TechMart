@@ -148,7 +148,7 @@ namespace TechMart.API.Controllers
                         ? (o.User != null ? o.User.Email : "")
                         : o.CustomerEmail,
                     CustomerPhone = o.CustomerPhone,
-                    CustomerAddress = o.CustomerAddress,
+                    CustomerAddress = o.CustomerAddressLine1 + (string.IsNullOrWhiteSpace(o.CustomerAddressLine2) ? "" : ", " + o.CustomerAddressLine2) + ", " + o.CustomerCity + " " + o.CustomerPostalCode,
                     PaymentMethod = o.PaymentMethod,
                     CreatedAt = o.CreatedAt,
                     TotalAmount = o.TotalAmount,

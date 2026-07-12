@@ -28,6 +28,7 @@ const AdminDashboard = () => {
   const [categories, setCategories] = useState([]);
   const [orders, setOrders] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [settings, setSettings] = useState({
     storeName: 'TechMart',
     contactEmail: 'support@techmart.com',
@@ -131,6 +132,9 @@ const AdminDashboard = () => {
       } else if (activeMenu === 'settings') {
         const settingsRes = await api.get('/admin/settings');
         setSettings(settingsRes.data);
+      } else if (activeMenu === 'reviews') {
+        const reviewsRes = await api.get('/reviews/admin/all');
+        setReviews(reviewsRes.data);
       }
     } catch (err) {
       console.error(err);
@@ -578,6 +582,11 @@ const AdminDashboard = () => {
       <svg className={`w-5 h-5 transition-colors ${active ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-350'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+    )},
+    { id: 'reviews', name: 'Reviews', icon: (active) => (
+      <svg className={`w-5 h-5 transition-colors ${active ? 'text-indigo-400' : 'text-slate-400 group-hover:text-slate-350'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
       </svg>
     )},
     { id: 'profile', name: 'Profile', icon: (active) => (
@@ -1529,6 +1538,80 @@ const AdminDashboard = () => {
                       <span className="inline-block bg-indigo-650/20 text-indigo-400 text-[10px] font-bold uppercase px-3 py-1 rounded-full border border-indigo-500/20 shadow-sm">
                         Full Admin Operations Enabled
                       </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* ==================== 8. REVIEWS MODERATION PAGE ==================== */}
+              {activeMenu === 'reviews' && (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-105">Customer Reviews Moderation</h3>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5">Manage, delete, and view all feedback posted by users</p>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse text-xs font-semibold text-slate-300">
+                        <thead>
+                          <tr className="border-b border-slate-800 bg-slate-955/60 font-black uppercase text-[10px] text-slate-450 tracking-wider">
+                            <th className="py-4 px-6">Product</th>
+                            <th className="py-4 px-6">Reviewer</th>
+                            <th className="py-4 px-6">Rating</th>
+                            <th className="py-4 px-6">Comment</th>
+                            <th className="py-4 px-6">Date</th>
+                            <th className="py-4 px-6 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/60">
+                          {reviews.length === 0 ? (
+                            <tr>
+                              <td colSpan="6" className="py-8 text-center text-slate-500 italic">No reviews found in database.</td>
+                            </tr>
+                          ) : (
+                            reviews.map((r) => (
+                              <tr key={r.id} className="hover:bg-slate-850/30 transition duration-150">
+                                <td className="py-4 px-6 font-extrabold text-slate-200">{r.productName}</td>
+                                <td className="py-4 px-6 font-extrabold text-slate-200">{r.reviewerName}</td>
+                                <td className="py-4 px-6">
+                                  <div className="flex text-amber-400">
+                                    {Array.from({ length: 5 }).map((_, i) => (
+                                      <svg key={i} className={`w-3.5 h-3.5 ${i < r.rating ? 'fill-current' : 'text-slate-700'}`} viewBox="0 0 20 20" fill="currentColor">
+                                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                                      </svg>
+                                    ))}
+                                  </div>
+                                </td>
+                                <td className="py-4 px-6 max-w-xs truncate text-slate-450" title={r.comment}>{r.comment || <span className="italic opacity-50">None</span>}</td>
+                                <td className="py-4 px-6 text-slate-500 font-bold">{new Date(r.createdAt).toLocaleDateString()}</td>
+                                <td className="py-4 px-6 text-right">
+                                  <button
+                                    onClick={async () => {
+                                      if (window.confirm("Are you sure you want to delete this review?")) {
+                                        try {
+                                          await api.delete(`/reviews/${r.id}`);
+                                          showToast("Review deleted successfully", "success");
+                                          // Reload reviews
+                                          const reviewsRes = await api.get('/reviews/admin/all');
+                                          setReviews(reviewsRes.data);
+                                        } catch (err) {
+                                          showToast("Failed to delete review", "error");
+                                        }
+                                      }
+                                    }}
+                                    className="bg-rose-500/10 hover:bg-rose-500 border border-rose-500/20 hover:border-rose-500 text-rose-400 hover:text-white px-3.5 py-1.5 rounded-lg shadow-sm font-extrabold transition cursor-pointer text-[10px] uppercase tracking-wider inline-flex items-center gap-1"
+                                  >
+                                    Delete
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
                 </div>

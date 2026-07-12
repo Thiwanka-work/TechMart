@@ -9,6 +9,11 @@ using System.Threading.Tasks;
 using TechMart.API.Models;
 using TechMart.API.Services;
 using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using TechMart.API.Data;
+using System.Security.Claims;
+using TechMart.API.DTOs;
 
 namespace TechMart.API.Controllers
 {
@@ -17,12 +22,14 @@ namespace TechMart.API.Controllers
     public class ChatController : ControllerBase
     {
         private readonly ProductService _productService;
+        private readonly ApplicationDbContext _context;
         private readonly string _apiKey;
         private readonly IHttpClientFactory _httpClientFactory;
 
-        public ChatController(ProductService productService, IConfiguration configuration, IHttpClientFactory httpClientFactory)
+        public ChatController(ProductService productService, ApplicationDbContext context, IConfiguration configuration, IHttpClientFactory httpClientFactory)
         {
             _productService = productService;
+            _context = context;
             _apiKey = configuration["Gemini:ApiKey"] ?? string.Empty;
             _httpClientFactory = httpClientFactory;
         }
@@ -44,6 +51,34 @@ namespace TechMart.API.Controllers
 
             try
             {
+                // Fetch pending reviews if user is logged in
+                var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+                string pendingReviewsContext = "";
+                if (claim != null && int.TryParse(claim.Value, out int loggedInUserId))
+                {
+                    var reviewedProductIds = await _context.Reviews
+                        .Where(r => r.UserId == loggedInUserId)
+                        .Select(r => r.ProductId)
+                        .ToListAsync();
+
+                    var pendingProducts = await _context.Orders
+                        .Include(o => o.OrderItems)
+                        .ThenInclude(oi => oi.Product)
+                        .Where(o => o.UserId == loggedInUserId && o.Status == "Completed")
+                        .SelectMany(o => o.OrderItems)
+                        .Where(oi => oi.Product != null && !reviewedProductIds.Contains(oi.ProductId))
+                        .Select(oi => oi.Product!.Name)
+                        .Distinct()
+                        .ToListAsync();
+
+                    if (pendingProducts.Any())
+                    {
+                        pendingReviewsContext = "\n\n=========================\nPENDING USER REVIEWS\n=========================\nThe user has recently received the following products but has NOT reviewed them yet:\n" + 
+                                               string.Join("\n", pendingProducts.Select(p => $"- {p}")) + 
+                                               "\n\nProactively (but politely) ask the user to provide a rating (1-5 stars) and feedback for one of these products if appropriate, or when greeting them.";
+                    }
+                }
+
                 // 1. Fetch live product inventory context
                 var products = await _productService.GetProductsAsync();
                 
@@ -226,7 +261,7 @@ You help customers choose the right technology products.
 LIVE INVENTORY CONTEXT
 =========================
 
-{inventoryBuilder.ToString()}";
+{inventoryBuilder.ToString()}{pendingReviewsContext}";
 
                 // 4. Build the full conversation contents array with history + new message
                 var client = _httpClientFactory.CreateClient();
@@ -296,6 +331,102 @@ LIVE INVENTORY CONTEXT
             {
                 return StatusCode(500, new { message = "An error occurred inside the chat assistant handler.", error = ex.Message });
             }
+        }
+
+        private int GetUserId()
+        {
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (claim == null)
+            {
+                throw new InvalidOperationException("User ID claim not found.");
+            }
+            return int.Parse(claim.Value);
+        }
+
+        [Authorize]
+        [HttpGet("pending-feedback")]
+        public async Task<IActionResult> GetPendingFeedback()
+        {
+            var userId = GetUserId();
+            
+            var completedOrders = await _context.Orders
+                .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+                .Where(o => o.UserId == userId && o.Status == "Completed")
+                .ToListAsync();
+
+            var reviewedProductIds = await _context.Reviews
+                .Where(r => r.UserId == userId)
+                .Select(r => r.ProductId)
+                .ToListAsync();
+
+            var pendingFeedback = completedOrders
+                .SelectMany(o => o.OrderItems)
+                .Where(oi => oi.Product != null && !reviewedProductIds.Contains(oi.ProductId))
+                .Select(oi => new
+                {
+                    OrderId = oi.OrderId,
+                    ProductId = oi.ProductId,
+                    ProductName = oi.Product!.Name,
+                    ImageUrl = oi.Product.ImageUrl
+                })
+                .GroupBy(p => p.ProductId)
+                .Select(g => g.First())
+                .ToList();
+
+            return Ok(pendingFeedback);
+        }
+
+        [Authorize]
+        [HttpPost("submit-feedback")]
+        public async Task<IActionResult> SubmitChatFeedback([FromBody] SubmitReviewRequest request)
+        {
+            if (request == null)
+            {
+                return BadRequest(new { message = "Feedback data is required." });
+            }
+
+            if (request.Rating < 1 || request.Rating > 5)
+            {
+                return BadRequest(new { message = "Rating must be between 1 and 5 stars." });
+            }
+
+            var userId = GetUserId();
+
+            var productExists = await _context.Products.AnyAsync(p => p.Id == request.ProductId);
+            if (!productExists)
+            {
+                return NotFound(new { message = "Product not found." });
+            }
+
+            var existingReview = await _context.Reviews
+                .FirstOrDefaultAsync(r => r.ProductId == request.ProductId && r.UserId == userId);
+
+            if (existingReview != null)
+            {
+                existingReview.Rating = request.Rating;
+                existingReview.Comment = request.Comment;
+                existingReview.CreatedAt = DateTime.UtcNow;
+
+                _context.Reviews.Update(existingReview);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Feedback updated successfully." });
+            }
+
+            var review = new Review
+            {
+                ProductId = request.ProductId,
+                UserId = userId,
+                Rating = request.Rating,
+                Comment = request.Comment,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _context.Reviews.AddAsync(review);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Feedback submitted successfully." });
         }
     }
 

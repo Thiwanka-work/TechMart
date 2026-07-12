@@ -64,7 +64,10 @@ namespace TechMart.API.Services
                     CustomerName = request.CustomerName,
                     CustomerEmail = request.CustomerEmail,
                     CustomerPhone = request.CustomerPhone,
-                    CustomerAddress = request.CustomerAddress,
+                    CustomerAddressLine1 = request.CustomerAddressLine1,
+                    CustomerAddressLine2 = request.CustomerAddressLine2,
+                    CustomerCity = request.CustomerCity,
+                    CustomerPostalCode = request.CustomerPostalCode,
                     PaymentMethod = request.PaymentMethod,
                     TotalAmount = totalAmount,
                     Status = "Pending",
@@ -74,9 +77,21 @@ namespace TechMart.API.Services
 
                 await _context.Orders.AddAsync(order);
 
-                // Clear customer's shopping cart in DB if registered
+                // Clear customer's shopping cart in DB and save address details if registered
                 if (userId.HasValue)
                 {
+                    var userObj = await _context.Users.FindAsync(userId.Value);
+                    if (userObj != null)
+                    {
+                        userObj.SavedFullName = request.CustomerName;
+                        userObj.SavedPhone = request.CustomerPhone;
+                        userObj.SavedAddressLine1 = request.CustomerAddressLine1;
+                        userObj.SavedAddressLine2 = request.CustomerAddressLine2;
+                        userObj.SavedCity = request.CustomerCity;
+                        userObj.SavedPostalCode = request.CustomerPostalCode;
+                        _context.Users.Update(userObj);
+                    }
+
                     var cart = await _context.Carts
                         .Include(c => c.CartItems)
                         .FirstOrDefaultAsync(c => c.UserId == userId.Value);
@@ -146,7 +161,10 @@ namespace TechMart.API.Services
                     ? (order.User != null ? order.User.Email : "Unknown Email")
                     : order.CustomerEmail,
                 CustomerPhone = order.CustomerPhone,
-                CustomerAddress = order.CustomerAddress,
+                CustomerAddressLine1 = order.CustomerAddressLine1,
+                CustomerAddressLine2 = order.CustomerAddressLine2,
+                CustomerCity = order.CustomerCity,
+                CustomerPostalCode = order.CustomerPostalCode,
                 PaymentMethod = order.PaymentMethod,
                 TotalAmount = order.TotalAmount,
                 Status = order.Status,

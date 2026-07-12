@@ -10,7 +10,10 @@ namespace TechMart.API.Models
         public string CustomerName { get; set; } = string.Empty;
         public string CustomerEmail { get; set; } = string.Empty;
         public string CustomerPhone { get; set; } = string.Empty;
-        public string CustomerAddress { get; set; } = string.Empty;
+        public string CustomerAddressLine1 { get; set; } = string.Empty;
+        public string? CustomerAddressLine2 { get; set; }
+        public string CustomerCity { get; set; } = string.Empty;
+        public string CustomerPostalCode { get; set; } = string.Empty;
         public string PaymentMethod { get; set; } = "PayOnDelivery";
         public decimal TotalAmount { get; set; }
         public string Status { get; set; } = "Pending"; // Pending, Processing, Completed, Cancelled
