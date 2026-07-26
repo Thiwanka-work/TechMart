@@ -115,6 +115,22 @@ npm run dev
 
 ---
 
+## ☁️ Deployment Architecture (AWS)
+
+This application is deployed on Amazon Web Services (AWS) using a production-ready cloud architecture. While local development uses **SQLite**, the production deployment utilizes a scalable **PostgreSQL** database on Amazon RDS.
+
+- **Frontend (UI)**: Hosted statically on an **Amazon S3 Bucket** configured for static website hosting.
+- **Backend (API)**: Hosted on an **Amazon EC2 Instance** (Ubuntu) running the .NET 8 runtime. It uses **Nginx** as a reverse proxy to forward traffic from Port 80 to the internal backend running on Port 5005.
+- **Database**: **Amazon RDS (PostgreSQL)** for robust, production-grade relational data storage. 
+
+> [!IMPORTANT]
+> **Dynamic IP Handling (Troubleshooting)**
+> Since the EC2 instance uses a dynamic Public IP Address, restarting the EC2 instance will change its IP. When this happens:
+> 1. The React Frontend `.env.production` file must be updated with the new IP, rebuilt, and re-uploaded to S3.
+> 2. Existing image URLs stored in the PostgreSQL database will still point to the old IP. You must connect to the RDS PostgreSQL database (e.g., using `psql` on the EC2 instance) and run `REPLACE` queries on the `ImageUrl` columns in the `Products`, `Categories`, and `ProductVariants` tables to update them to the new IP.
+
+---
+
 ## 📂 Project Structure
 
 ```text
